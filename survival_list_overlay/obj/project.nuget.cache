@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "u0kCrapOrSd/yCSYa+iEgGCM0nYy+TsdofbIaN6FfKz2beoYanilUBHq5/PVv8nXgX09tCVZ2R/06aIjqhpLSg==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\SeanS\\source\\repos\\survival_list_overlay\\survival_list_overlay\\survival_list_overlay.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\SeanS\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\7.0.16\\microsoft.windowsdesktop.app.ref.7.0.16.nupkg.sha512",
+    "C:\\Users\\SeanS\\.nuget\\packages\\microsoft.netcore.app.ref\\7.0.16\\microsoft.netcore.app.ref.7.0.16.nupkg.sha512",
+    "C:\\Users\\SeanS\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\7.0.16\\microsoft.aspnetcore.app.ref.7.0.16.nupkg.sha512",
+    "C:\\Users\\SeanS\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\7.0.16\\microsoft.netcore.app.host.win-x64.7.0.16.nupkg.sha512"
+  ],
+  "logs": []
+}

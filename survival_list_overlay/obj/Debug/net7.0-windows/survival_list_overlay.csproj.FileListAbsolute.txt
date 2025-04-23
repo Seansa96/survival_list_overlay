@@ -3,6 +3,8 @@ C:\Users\SeanS\source\repos\survival_list_overlay\survival_list_overlay\bin\Debu
 C:\Users\SeanS\source\repos\survival_list_overlay\survival_list_overlay\bin\Debug\net7.0-windows\survival_list_overlay.runtimeconfig.json
 C:\Users\SeanS\source\repos\survival_list_overlay\survival_list_overlay\bin\Debug\net7.0-windows\survival_list_overlay.dll
 C:\Users\SeanS\source\repos\survival_list_overlay\survival_list_overlay\bin\Debug\net7.0-windows\survival_list_overlay.pdb
+C:\Users\SeanS\source\repos\survival_list_overlay\survival_list_overlay\bin\Debug\net7.0-windows\WPF.UI.dll
+C:\Users\SeanS\source\repos\survival_list_overlay\survival_list_overlay\obj\Debug\net7.0-windows\survival_list_overlay.csproj.AssemblyReference.cache
 C:\Users\SeanS\source\repos\survival_list_overlay\survival_list_overlay\obj\Debug\net7.0-windows\MainWindow.g.cs
 C:\Users\SeanS\source\repos\survival_list_overlay\survival_list_overlay\obj\Debug\net7.0-windows\App.g.cs
 C:\Users\SeanS\source\repos\survival_list_overlay\survival_list_overlay\obj\Debug\net7.0-windows\survival_list_overlay_MarkupCompile.cache
@@ -13,6 +15,8 @@ C:\Users\SeanS\source\repos\survival_list_overlay\survival_list_overlay\obj\Debu
 C:\Users\SeanS\source\repos\survival_list_overlay\survival_list_overlay\obj\Debug\net7.0-windows\survival_list_overlay.AssemblyInfoInputs.cache
 C:\Users\SeanS\source\repos\survival_list_overlay\survival_list_overlay\obj\Debug\net7.0-windows\survival_list_overlay.AssemblyInfo.cs
 C:\Users\SeanS\source\repos\survival_list_overlay\survival_list_overlay\obj\Debug\net7.0-windows\survival_list_overlay.csproj.CoreCompileInputs.cache
+C:\Users\SeanS\source\repos\survival_list_overlay\survival_list_overlay\obj\Debug\net7.0-windows\survival_list_overlay.sourcelink.json
+C:\Users\SeanS\source\repos\survival_list_overlay\survival_list_overlay\obj\Debug\net7.0-windows\survival.0B4349CE.Up2Date
 C:\Users\SeanS\source\repos\survival_list_overlay\survival_list_overlay\obj\Debug\net7.0-windows\survival_list_overlay.dll
 C:\Users\SeanS\source\repos\survival_list_overlay\survival_list_overlay\obj\Debug\net7.0-windows\refint\survival_list_overlay.dll
 C:\Users\SeanS\source\repos\survival_list_overlay\survival_list_overlay\obj\Debug\net7.0-windows\survival_list_overlay.pdb

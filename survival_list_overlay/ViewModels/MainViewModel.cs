@@ -17,7 +17,7 @@ namespace survival_list_overlay.ViewModels
     public MainViewModel()
     {
         Items.Add(new TrackedItem { Name = "Wooden Sword", Total = 5, Progress = 0 });
-        Items.Add(new TrackedItem { Name = "Stone Axe", Total = 3, Progress = 1 });
+        Items.Add(new TrackedItem { Name = "Stone Axe", Total = 3, Progress = 2 });
 
         foreach (var item in Items)
         {

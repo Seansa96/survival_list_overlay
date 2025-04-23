@@ -31,8 +31,26 @@ namespace survival_list_overlay
                 this.DragMove();
         }
 
+        private void RootGrid_MouseEnter(object sender, MouseEventArgs e)
+        {
+            
+            TitleBar.Visibility = Visibility.Visible;
+        }
       
-     
+        private void RootGrid_MouseLeave(object sender, MouseEventArgs e)
+        {
+            if (!TitleBar.IsMouseOver)
+            { 
+                TitleBar.Visibility = Visibility.Collapsed;
+            }
+                
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+            
+        }
     }
 
     

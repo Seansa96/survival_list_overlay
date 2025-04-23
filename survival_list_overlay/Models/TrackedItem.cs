@@ -2,16 +2,22 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Windows.Input;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WPF.UI.MVVM.Command;
+
 
 namespace survival_list_overlay.Models
 {
+
     public class TrackedItem : INotifyPropertyChanged
     {
+
+        //Var Properties
         private int progress;
-        private string progressStatus = "not_tracked";
+        private string progressStatus = "unfinished";
         public string Name { get; set; }
         public int Total { get; set; }
 
@@ -24,7 +30,7 @@ namespace survival_list_overlay.Models
                 {
                     progress = value;
                     OnPropertyChanged(nameof(Progress));
-                    UpdateStatus();
+                    ProgressStatus = (progress >= Total) ? "completed" : "unfinished";
 
                 }
             }
@@ -43,13 +49,15 @@ namespace survival_list_overlay.Models
                 }
             }
         }
+
+        //Event-related
         public event PropertyChangedEventHandler PropertyChanged;
         public event Action<TrackedItem> CompletionCallback;
 
         protected void OnPropertyChanged(string prop) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
 
-        private void UpdateStatus()
+        /*private void UpdateStatus()
         {
             if (Progress >= Total)
                 ProgressStatus = "completed";
@@ -59,7 +67,22 @@ namespace survival_list_overlay.Models
             
                 
         }
+        */
+        
+        //ICommands
+        public ICommand IncrementCommand { get; }
+        public ICommand DecrementCommand { get; }
+
+        //Constructor
+        public TrackedItem()
+        {
+            IncrementCommand = new RelayCommand(_ => Progress++,  _ => Progress < Total );
+            DecrementCommand = new RelayCommand( _ => Progress--, _ => Progress > 0);
+            
         }
+
+    }
+        
 
     }
 

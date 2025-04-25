@@ -18,9 +18,22 @@ namespace survival_list_overlay.Models
         //Var Properties
         private int progress;
         private string progressStatus = "unfinished";
+        private string? category = string.Empty;
         public string Name { get; set; }
         public int Total { get; set; }
 
+        public string? Category
+        {
+            get => category;
+            set
+                {
+                if (category != value)
+                {
+                    category = value;
+                    OnPropertyChanged(nameof(Category));
+                }
+            }
+        }
         public int Progress
         {
             get => progress;

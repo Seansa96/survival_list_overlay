@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:survival_list_overlay"
         mc:Ignorable="d"
-        Title="SG Overlay" Height="200" Width="300"
+        Title="SG Overlay" SizeToContent="Height" Width="300"
         MouseDown="Window_MouseDown"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -47,12 +47,16 @@
                 <ItemsControl ItemsSource="{Binding Items}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
+                            
+                            
+                            <!-- Item Names -->
                             <Grid Margin="5">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="{Binding Name}" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="{Binding Name}" Foreground="White" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" FontSize="12" FontWeight="Bold"
+                                           MinWidth="50" MaxWidth="120" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                 
                                 <!-- Progress Bar -->
                                 <Grid Grid.Column="1" Height="25">
@@ -66,9 +70,12 @@
                                         </TextBlock.Text>
                                     </TextBlock>
                                     
+                                    <!-- Per Item Buttons-->
                                     <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="10,0,0,0" VerticalAlignment="Center">
-                                        <Button Content="-" Width="20" Height="20" Command="{Binding DecrementCommand}" />
-                                        <Button Content="+" Width="20" Height="20" Command="{Binding IncrementCommand}" Margin="5,0,0,0"/>
+                                        <Button Content="-" Width="15" Height="15" Command="{Binding DecrementCommand}" />
+                                        <Button Content="+" Width="15" Height="15" Command="{Binding IncrementCommand}" Margin="5,0,0,0"/>
+                                        <Button Content="Rem" Width="40" Height="20" FontSize="10" HorizontalContentAlignment="Center" Command="{Binding DataContext.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}" Margin="5,0,0,0"/>
                                     </StackPanel>
                                     
                                 </Grid>
@@ -77,6 +84,25 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+                
+                <!-- Separator -->
+                <Separator Margin="5" />
+                
+                <!-- Add New Items to the above -->
+                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Item Name" Foreground="White" Margin="0,0,0,2"/>
+                        <TextBox Width="100" Text="{Binding NewItemName, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>   
+
+                    <StackPanel Margin="5,0,0,0">
+                        <TextBlock Text="Total" Foreground="White" Margin="0,0,0,2"/>
+                        <TextBox Width="50" Text="{Binding NewItemTotal, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+
+                    <Button Content="Add" Margin="5,18,0,0" Command="{Binding AddNewItemCommand}" />
+                </StackPanel>
+
             </StackPanel>
         </Border>
     </Grid>

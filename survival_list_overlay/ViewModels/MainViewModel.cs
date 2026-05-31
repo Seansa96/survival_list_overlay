@@ -11,156 +11,426 @@ namespace survival_list_overlay.ViewModels;
 public sealed class MainViewModel : INotifyPropertyChanged
 {
     private readonly IAudioCueService audioCueService;
+    private readonly OverlayData data;
+    private readonly IOverlayDataStore dataStore;
     private readonly IUserNotificationService notificationService;
+    private readonly RegistryResolver resolver;
     private readonly OverlaySettings settings;
-    private TrackedItemViewModel? lastDeletedItem;
-    private int? lastDeletedItemIndex;
-    private string newItemName = string.Empty;
-    private string newItemTotal = string.Empty;
+    private TrackedEntry? lastDeletedEntry;
+    private int? lastDeletedEntryIndex;
+    private string newTargetQuantity = "1";
+    private string searchQuery = string.Empty;
+    private TrackedEntryViewModel? selectedEntry;
+    private SearchResultViewModel? selectedSearchResult;
+    private bool showFavoritesOnly;
 
     public MainViewModel(
         IUserNotificationService notificationService,
         IAudioCueService audioCueService,
-        OverlaySettings? settings = null)
+        OverlaySettings? settings = null,
+        IOverlayDataStore? dataStore = null)
     {
         this.notificationService = notificationService;
         this.audioCueService = audioCueService;
         this.settings = settings ?? new OverlaySettings();
+        this.dataStore = dataStore ?? new JsonOverlayDataStore();
 
-        AddNewItemCommand = new RelayCommand(_ => AddNewItem(), _ => CanAddNewItem());
-        RemoveItemCommand = new RelayCommand(RemoveItem, param => param is TrackedItemViewModel);
-        UndoLastRemovalCommand = new RelayCommand(_ => UndoLastRemoval(), _ => lastDeletedItem is not null);
+        data = this.dataStore.Load();
+        resolver = new RegistryResolver(data.Registry);
+        EnsureActiveList();
+
+        AddSelectedResultCommand = new RelayCommand(_ => AddSelectedResult(), _ => CanAddSelectedResult());
+        RemoveEntryCommand = new RelayCommand(RemoveEntry, parameter => parameter is TrackedEntryViewModel);
+        UndoLastRemovalCommand = new RelayCommand(_ => UndoLastRemoval(), _ => lastDeletedEntry is not null);
+        IncrementSelectedEntryCommand = new RelayCommand(_ => SelectedEntry?.IncrementCommand.Execute(null), _ => SelectedEntry is not null);
+        DecrementSelectedEntryCommand = new RelayCommand(_ => SelectedEntry?.DecrementCommand.Execute(null), _ => SelectedEntry is not null);
+        ToggleSelectedFavoriteCommand = new RelayCommand(_ => SelectedEntry?.ToggleFavoriteCommand.Execute(null), _ => SelectedEntry is not null);
+        ToggleSelectedStickyCommand = new RelayCommand(_ => SelectedEntry?.ToggleStickyCommand.Execute(null), _ => SelectedEntry is not null);
+        ToggleSelectedExpandedCommand = new RelayCommand(_ => SelectedEntry?.ToggleExpandedCommand.Execute(null), _ => SelectedEntry?.IsRecipe == true);
+        ToggleFavoritesFilterCommand = new RelayCommand(_ => ShowFavoritesOnly = !ShowFavoritesOnly);
+        ClearSearchCommand = new RelayCommand(_ => SearchQuery = string.Empty);
+
+        RefreshSearchResults();
+        RefreshEntries();
     }
 
-    public ObservableCollection<TrackedItemViewModel> Items { get; } = new();
+    public ObservableCollection<TrackedEntryViewModel> Entries { get; } = new();
+    public ObservableCollection<SearchResultViewModel> SearchResults { get; } = new();
+
+    public IReadOnlyList<TrackedListSortMode> SortModes { get; } =
+        new[] { TrackedListSortMode.Priority, TrackedListSortMode.Alphabetical };
 
     public string Title => settings.Title;
 
-    public string NewItemName
+    public string HeaderText => $"{data.Registry.GameName} / {ActiveList.Name}";
+
+    public string EntryCountText => $"{ActiveList.Entries.Count} / {OverlayLimits.MaxEntriesPerList}";
+
+    public string EmptyStateText => ShowFavoritesOnly
+        ? "No favorite entries tracked."
+        : "No items tracked. Search to add an item or recipe.";
+
+    public TrackedListSortMode SelectedSortMode
     {
-        get => newItemName;
+        get => ActiveList.SortMode;
         set
         {
-            if (newItemName == value)
+            if (ActiveList.SortMode == value)
             {
                 return;
             }
 
-            newItemName = value;
-            OnPropertyChanged(nameof(NewItemName));
-            RelayCommand.RefreshCanExecute();
+            ActiveList.SortMode = value;
+            Save();
+            RefreshEntries();
+            OnPropertyChanged(nameof(SelectedSortMode));
         }
     }
 
-    public string NewItemTotal
+    public string SearchQuery
     {
-        get => newItemTotal;
+        get => searchQuery;
         set
         {
-            if (newItemTotal == value)
+            if (searchQuery == value)
             {
                 return;
             }
 
-            newItemTotal = value;
-            OnPropertyChanged(nameof(NewItemTotal));
+            searchQuery = value;
+            OnPropertyChanged(nameof(SearchQuery));
+            RefreshSearchResults();
             RelayCommand.RefreshCanExecute();
         }
     }
 
-    public ICommand AddNewItemCommand { get; }
-    public ICommand RemoveItemCommand { get; }
+    public string NewTargetQuantity
+    {
+        get => newTargetQuantity;
+        set
+        {
+            if (newTargetQuantity == value)
+            {
+                return;
+            }
+
+            newTargetQuantity = value;
+            OnPropertyChanged(nameof(NewTargetQuantity));
+            RelayCommand.RefreshCanExecute();
+        }
+    }
+
+    public SearchResultViewModel? SelectedSearchResult
+    {
+        get => selectedSearchResult;
+        set
+        {
+            if (selectedSearchResult == value)
+            {
+                return;
+            }
+
+            selectedSearchResult = value;
+            OnPropertyChanged(nameof(SelectedSearchResult));
+            RelayCommand.RefreshCanExecute();
+        }
+    }
+
+    public TrackedEntryViewModel? SelectedEntry
+    {
+        get => selectedEntry;
+        set
+        {
+            if (selectedEntry == value)
+            {
+                return;
+            }
+
+            selectedEntry = value;
+            OnPropertyChanged(nameof(SelectedEntry));
+            RelayCommand.RefreshCanExecute();
+        }
+    }
+
+    public bool ShowFavoritesOnly
+    {
+        get => showFavoritesOnly;
+        set
+        {
+            if (showFavoritesOnly == value)
+            {
+                return;
+            }
+
+            showFavoritesOnly = value;
+            OnPropertyChanged(nameof(ShowFavoritesOnly));
+            OnPropertyChanged(nameof(EmptyStateText));
+            RefreshEntries();
+        }
+    }
+
+    public ICommand AddSelectedResultCommand { get; }
+    public ICommand RemoveEntryCommand { get; }
     public ICommand UndoLastRemovalCommand { get; }
+    public ICommand IncrementSelectedEntryCommand { get; }
+    public ICommand DecrementSelectedEntryCommand { get; }
+    public ICommand ToggleSelectedFavoriteCommand { get; }
+    public ICommand ToggleSelectedStickyCommand { get; }
+    public ICommand ToggleSelectedExpandedCommand { get; }
+    public ICommand ToggleFavoritesFilterCommand { get; }
+    public ICommand ClearSearchCommand { get; }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    private void AddNewItem()
+    public void SelectNextSearchResult()
     {
-        if (!TryGetNewItemTotal(out var total))
+        MoveSearchSelection(1);
+    }
+
+    public void SelectPreviousSearchResult()
+    {
+        MoveSearchSelection(-1);
+    }
+
+    public void AddSelectedSearchResultFromKeyboard()
+    {
+        if (AddSelectedResultCommand.CanExecute(null))
+        {
+            AddSelectedResultCommand.Execute(null);
+        }
+    }
+
+    public void RemoveSelectedEntryFromKeyboard()
+    {
+        if (SelectedEntry is not null && RemoveEntryCommand.CanExecute(SelectedEntry))
+        {
+            RemoveEntryCommand.Execute(SelectedEntry);
+        }
+    }
+
+    private TrackedList ActiveList => data.Profile.Lists.First(list => list.Id == data.Profile.ActiveListId);
+
+    private void AddSelectedResult()
+    {
+        if (!TryGetTargetQuantity(out var targetQuantity))
+        {
+            notificationService.ShowError("Enter a quantity greater than zero.", "Invalid quantity");
+            return;
+        }
+
+        var result = SelectedSearchResult ?? CreateCustomItemResult();
+        if (result is null)
         {
             return;
         }
 
-        var item = new TrackedItem
-        {
-            Name = NewItemName.Trim(),
-            Total = total,
-            Progress = 0
-        };
-
-        AddItem(new TrackedItemViewModel(item));
-        NewItemName = string.Empty;
-        NewItemTotal = string.Empty;
-    }
-
-    private bool CanAddNewItem()
-    {
-        return Items.Count < settings.MaxVisibleItems
-            && !string.IsNullOrWhiteSpace(NewItemName)
-            && TryGetNewItemTotal(out _);
-    }
-
-    private void AddItem(TrackedItemViewModel item)
-    {
-        if (Items.Count >= settings.MaxVisibleItems)
+        if (ActiveList.Entries.Count >= OverlayLimits.MaxEntriesPerList)
         {
             notificationService.ShowError(
-                $"Cannot add more items. The list limit is {settings.MaxVisibleItems} items.",
-                "List limit reached");
+                $"This list already has {OverlayLimits.MaxEntriesPerList} entries. Remove an entry before adding another.",
+                "List full");
             return;
         }
 
-        item.Item.Completed += OnItemCompleted;
-        Items.Add(item);
-        RelayCommand.RefreshCanExecute();
+        if (ActiveList.Entries.Any(entry => entry.EntryType == result.EntryType && entry.RefId == result.RefId)
+            && !notificationService.Confirm($"{result.DisplayName} is already tracked. Add a duplicate entry?", "Duplicate entry"))
+        {
+            return;
+        }
+
+        var entry = new TrackedEntry
+        {
+            EntryType = result.EntryType,
+            RefId = result.RefId,
+            TargetQuantity = targetQuantity,
+            CurrentQuantity = 0,
+            Expanded = false
+        };
+
+        ActiveList.Entries.Add(entry);
+        SearchQuery = string.Empty;
+        NewTargetQuantity = "1";
+        Save();
+        RefreshSearchResults();
+        RefreshEntries(entry.Id);
     }
 
-    private void RemoveItem(object? parameter)
+    private bool CanAddSelectedResult()
     {
-        if (parameter is not TrackedItemViewModel item)
+        return TryGetTargetQuantity(out _)
+            && (SelectedSearchResult is not null || !string.IsNullOrWhiteSpace(SearchQuery));
+    }
+
+    private SearchResultViewModel? CreateCustomItemResult()
+    {
+        if (string.IsNullOrWhiteSpace(SearchQuery))
+        {
+            return null;
+        }
+
+        var item = resolver.AddCustomItem(SearchQuery.Trim());
+        return new SearchResultViewModel(new RegistrySearchResult(RegistryEntryType.Item, item.Id, item.Name, "custom"));
+    }
+
+    private void RemoveEntry(object? parameter)
+    {
+        if (parameter is not TrackedEntryViewModel viewModel)
         {
             return;
         }
 
-        var itemIndex = Items.IndexOf(item);
-        if (itemIndex < 0)
+        var entryIndex = ActiveList.Entries.FindIndex(entry => entry.Id == viewModel.Id);
+        if (entryIndex < 0)
         {
             return;
         }
 
-        item.Item.Completed -= OnItemCompleted;
-        Items.RemoveAt(itemIndex);
+        var entry = ActiveList.Entries[entryIndex];
+        if (entry.Sticky
+            && !notificationService.Confirm($"{viewModel.DisplayName} is marked sticky. Remove it anyway?", "Remove sticky entry"))
+        {
+            return;
+        }
 
-        lastDeletedItem?.Dispose();
-        lastDeletedItem = item;
-        lastDeletedItemIndex = itemIndex;
-        RelayCommand.RefreshCanExecute();
+        ActiveList.Entries.RemoveAt(entryIndex);
+        lastDeletedEntry = entry;
+        lastDeletedEntryIndex = entryIndex;
+        Save();
+        RefreshEntries();
     }
 
     private void UndoLastRemoval()
     {
-        if (lastDeletedItem is null || lastDeletedItemIndex is null)
+        if (lastDeletedEntry is null || lastDeletedEntryIndex is null)
         {
             return;
         }
 
-        var insertIndex = Math.Min(lastDeletedItemIndex.Value, Items.Count);
-        lastDeletedItem.Item.Completed += OnItemCompleted;
-        Items.Insert(insertIndex, lastDeletedItem);
+        if (ActiveList.Entries.Count >= OverlayLimits.MaxEntriesPerList)
+        {
+            notificationService.ShowError(
+                $"This list already has {OverlayLimits.MaxEntriesPerList} entries. Remove an entry before restoring.",
+                "List full");
+            return;
+        }
 
-        lastDeletedItem = null;
-        lastDeletedItemIndex = null;
+        var insertIndex = Math.Min(lastDeletedEntryIndex.Value, ActiveList.Entries.Count);
+        ActiveList.Entries.Insert(insertIndex, lastDeletedEntry);
+        var restoredEntryId = lastDeletedEntry.Id;
+        lastDeletedEntry = null;
+        lastDeletedEntryIndex = null;
+        Save();
+        RefreshEntries(restoredEntryId);
+    }
+
+    private void RefreshEntries(string? selectedEntryId = null)
+    {
+        foreach (var entry in Entries)
+        {
+            entry.Dispose();
+        }
+
+        Entries.Clear();
+
+        var entries = ActiveList.Entries.AsEnumerable();
+        if (ShowFavoritesOnly)
+        {
+            entries = entries.Where(entry => entry.Favorite);
+        }
+
+        foreach (var entry in TrackedEntrySorter.Sort(entries, ActiveList.SortMode, resolver))
+        {
+            Entries.Add(new TrackedEntryViewModel(entry, resolver, GetCollectedQuantity, OnEntryChanged));
+        }
+
+        SelectedEntry = selectedEntryId is null
+            ? Entries.FirstOrDefault()
+            : Entries.FirstOrDefault(entry => entry.Id == selectedEntryId) ?? Entries.FirstOrDefault();
+
+        OnPropertyChanged(nameof(EntryCountText));
+        OnPropertyChanged(nameof(EmptyStateText));
         RelayCommand.RefreshCanExecute();
     }
 
-    private bool TryGetNewItemTotal(out int total)
+    private void RefreshSearchResults()
     {
-        return int.TryParse(NewItemTotal, out total) && total > 0;
+        SearchResults.Clear();
+
+        foreach (var result in resolver.Search(SearchQuery).Select(result => new SearchResultViewModel(result)))
+        {
+            SearchResults.Add(result);
+        }
+
+        SelectedSearchResult = SearchResults.FirstOrDefault();
     }
 
-    private void OnItemCompleted(TrackedItem item)
+    private void OnEntryChanged(string selectedEntryId, bool playCompletionCue)
     {
-        audioCueService.PlayItemCompleted();
+        if (playCompletionCue)
+        {
+            audioCueService.PlayItemCompleted();
+        }
+
+        Save();
+        RefreshEntries(selectedEntryId);
+    }
+
+    private int GetCollectedQuantity(string itemId)
+    {
+        return ActiveList.Entries
+            .Where(entry => entry.EntryType == RegistryEntryType.Item && entry.RefId == itemId)
+            .Sum(entry => entry.CurrentQuantity);
+    }
+
+    private void MoveSearchSelection(int delta)
+    {
+        if (SearchResults.Count == 0)
+        {
+            return;
+        }
+
+        var selectedIndex = SelectedSearchResult is null
+            ? -1
+            : SearchResults.IndexOf(SelectedSearchResult);
+
+        var nextIndex = Math.Clamp(selectedIndex + delta, 0, SearchResults.Count - 1);
+        SelectedSearchResult = SearchResults[nextIndex];
+    }
+
+    private bool TryGetTargetQuantity(out int targetQuantity)
+    {
+        return int.TryParse(NewTargetQuantity, out targetQuantity) && targetQuantity > 0;
+    }
+
+    private void EnsureActiveList()
+    {
+        if (data.Profile.Lists.Count == 0)
+        {
+            data.Profile.Lists.Add(DefaultUserProfileFactory.CreateDefaultList());
+        }
+
+        if (data.Profile.Lists.Count > OverlayLimits.MaxListsPerGame)
+        {
+            data.Profile.Lists = data.Profile.Lists.Take(OverlayLimits.MaxListsPerGame).ToList();
+        }
+
+        foreach (var list in data.Profile.Lists)
+        {
+            if (list.Entries.Count > OverlayLimits.MaxEntriesPerList)
+            {
+                list.Entries = list.Entries.Take(OverlayLimits.MaxEntriesPerList).ToList();
+            }
+        }
+
+        if (data.Profile.Lists.All(list => list.Id != data.Profile.ActiveListId))
+        {
+            data.Profile.ActiveListId = data.Profile.Lists[0].Id;
+        }
+    }
+
+    private void Save()
+    {
+        dataStore.Save(data);
     }
 
     private void OnPropertyChanged(string propertyName)

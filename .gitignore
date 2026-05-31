@@ -16,3 +16,6 @@ x86/
 .idea/
 _ReSharper*/
 *.DotSettings.user
+AGENTS.md
+Docs/
+.agent/

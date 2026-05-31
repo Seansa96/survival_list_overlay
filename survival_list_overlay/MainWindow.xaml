@@ -4,14 +4,21 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="{Binding Title}" SizeToContent="Height" Width="360"
+        Title="{Binding Title}"
+        SizeToContent="Height"
+        Width="560"
         MouseDown="Window_MouseDown"
+        PreviewKeyDown="Window_PreviewKeyDown"
         WindowStyle="None"
         AllowsTransparency="True"
         ResizeMode="NoResize"
         Background="Transparent"
         Topmost="True"
         ShowInTaskbar="True">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </Window.Resources>
 
     <Grid x:Name="RootGrid"
           MouseEnter="RootGrid_MouseEnter"
@@ -41,89 +48,222 @@
                 CornerRadius="12"
                 Padding="10"
                 Margin="0,30,0,0">
-            <StackPanel>
-                <ItemsControl ItemsSource="{Binding Items}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Margin="5">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="80" />
-                                </Grid.ColumnDefinitions>
+            <DockPanel LastChildFill="True">
+                <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                                <TextBlock Text="{Binding Name}"
-                                           Foreground="White"
-                                           TextTrimming="CharacterEllipsis"
-                                           TextWrapping="NoWrap"
-                                           FontSize="12"
-                                           FontWeight="Bold"
-                                           VerticalAlignment="Center"
-                                           Margin="0,0,10,0" />
-
-                                <Grid Grid.Column="1" Height="25">
-                                    <ProgressBar Value="{Binding Progress}"
-                                                 Maximum="{Binding Total}"
-                                                 Height="15" />
-                                    <TextBlock VerticalAlignment="Center"
-                                               HorizontalAlignment="Center">
-                                        <TextBlock.Text>
-                                            <MultiBinding StringFormat="{}{0} / {1}">
-                                                <Binding Path="Progress" />
-                                                <Binding Path="Total" />
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
-                                </Grid>
-
-                                <StackPanel Grid.Column="2"
-                                            Orientation="Horizontal"
-                                            Margin="8,0,0,0"
-                                            VerticalAlignment="Center">
-                                    <Button Content="-"
-                                            Width="20"
-                                            Height="20"
-                                            Command="{Binding DecrementCommand}" />
-                                    <Button Content="+"
-                                            Width="20"
-                                            Height="20"
-                                            Command="{Binding IncrementCommand}"
-                                            Margin="4,0,0,0" />
-                                    <Button Content="Rem"
-                                            Width="36"
-                                            Height="20"
-                                            FontSize="10"
-                                            HorizontalContentAlignment="Center"
-                                            Command="{Binding DataContext.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                            CommandParameter="{Binding}"
-                                            Margin="4,0,0,0" />
-                                </StackPanel>
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-
-                <Separator Margin="5" />
-
-                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                     <StackPanel>
-                        <TextBlock Text="Item Name" Foreground="White" Margin="0,0,0,2" />
-                        <TextBox Width="120" Text="{Binding NewItemName, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock Text="{Binding HeaderText}"
+                                   Foreground="White"
+                                   FontWeight="Bold"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding EntryCountText}"
+                                   Foreground="#DDDDDD"
+                                   FontSize="11" />
                     </StackPanel>
 
-                    <StackPanel Margin="5,0,0,0">
-                        <TextBlock Text="Total" Foreground="White" Margin="0,0,0,2" />
-                        <TextBox Width="50" Text="{Binding NewItemTotal, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
+                    <ComboBox Grid.Column="1"
+                              Width="110"
+                              Margin="8,0,0,0"
+                              ItemsSource="{Binding SortModes}"
+                              SelectedItem="{Binding SelectedSortMode}" />
+                    <ToggleButton Grid.Column="2"
+                                  Content="Favs"
+                                  Width="52"
+                                  Margin="6,0,0,0"
+                                  IsChecked="{Binding ShowFavoritesOnly}" />
+                </Grid>
 
-                    <Button Content="Add"
-                            Margin="5,18,0,0"
-                            Command="{Binding AddNewItemCommand}" />
-                    <Button Content="Undo"
-                            Margin="5,18,0,0"
-                            Command="{Binding UndoLastRemovalCommand}" />
-                </StackPanel>
-            </StackPanel>
+                <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="64" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox x:Name="SearchBox"
+                             Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                             KeyDown="SearchBox_KeyDown"
+                             MinWidth="260" />
+                    <TextBox Grid.Column="1"
+                             Text="{Binding NewTargetQuantity, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="6,0,0,0" />
+                    <Button Grid.Column="2"
+                            Content="Add"
+                            Width="54"
+                            Margin="6,0,0,0"
+                            Command="{Binding AddSelectedResultCommand}" />
+                </Grid>
+
+                <ListBox DockPanel.Dock="Top"
+                         ItemsSource="{Binding SearchResults}"
+                         SelectedItem="{Binding SelectedSearchResult}"
+                         Height="82"
+                         Margin="0,0,0,8">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel>
+                                <TextBlock Text="{Binding EntryTypeLabel}"
+                                           Foreground="#CCCCCC"
+                                           Width="52" />
+                                <TextBlock Text="{Binding DisplayName}"
+                                           Foreground="White"
+                                           FontWeight="Bold"
+                                           Width="160" />
+                                <TextBlock Text="{Binding Summary}"
+                                           Foreground="#DDDDDD"
+                                           TextTrimming="CharacterEllipsis" />
+                            </DockPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <ListBox ItemsSource="{Binding Entries}"
+                         SelectedItem="{Binding SelectedEntry}"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         MinHeight="110">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderBrush="#33FFFFFF"
+                                    BorderThickness="0,0,0,1"
+                                    Padding="0,6">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="92" />
+                                        <ColumnDefinition Width="112" />
+                                        <ColumnDefinition Width="118" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding DisplayName}"
+                                                   Foreground="White"
+                                                   FontWeight="Bold"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding EntryTypeLabel}"
+                                                   Foreground="#CCCCCC"
+                                                   FontSize="11" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="{Binding ProgressText}"
+                                                   Foreground="White"
+                                                   HorizontalAlignment="Center" />
+                                        <TextBlock Text="{Binding RemainingText}"
+                                                   Foreground="#DDDDDD"
+                                                   FontSize="11"
+                                                   HorizontalAlignment="Center" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2"
+                                                Orientation="Horizontal"
+                                                HorizontalAlignment="Center">
+                                        <Button Content="-"
+                                                Width="22"
+                                                Height="22"
+                                                Command="{Binding DecrementCommand}" />
+                                        <Button Content="+"
+                                                Width="22"
+                                                Height="22"
+                                                Margin="4,0,0,0"
+                                                Command="{Binding IncrementCommand}" />
+                                        <TextBox Text="{Binding Priority, UpdateSourceTrigger=LostFocus}"
+                                                 Width="34"
+                                                 Height="22"
+                                                 Margin="6,0,0,0"
+                                                 HorizontalContentAlignment="Center" />
+                                        <StackPanel Margin="4,0,0,0">
+                                            <Button Content="^"
+                                                    Width="20"
+                                                    Height="11"
+                                                    Padding="0"
+                                                    FontSize="8"
+                                                    Command="{Binding IncreasePriorityCommand}" />
+                                            <Button Content="v"
+                                                    Width="20"
+                                                    Height="11"
+                                                    Padding="0"
+                                                    FontSize="8"
+                                                    Command="{Binding DecreasePriorityCommand}" />
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="3"
+                                                Orientation="Horizontal"
+                                                HorizontalAlignment="Right">
+                                        <Button Content="{Binding FavoriteText}"
+                                                Width="34"
+                                                Height="22"
+                                                Command="{Binding ToggleFavoriteCommand}" />
+                                        <Button Content="{Binding StickyText}"
+                                                Width="44"
+                                                Height="22"
+                                                Margin="4,0,0,0"
+                                                Command="{Binding ToggleStickyCommand}" />
+                                        <Button Content="Rem"
+                                                Width="34"
+                                                Height="22"
+                                                Margin="4,0,0,0"
+                                                Command="{Binding DataContext.RemoveEntryCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="1"
+                                                Grid.ColumnSpan="4"
+                                                Margin="18,5,0,0">
+                                        <TextBlock Text="{Binding IngredientSummary}"
+                                                   Foreground="#DDDDDD"
+                                                   FontSize="11"
+                                                   Visibility="{Binding IsRecipe, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        <Button Content="{Binding ExpandText}"
+                                                Width="48"
+                                                HorizontalAlignment="Left"
+                                                Margin="0,3,0,0"
+                                                Command="{Binding ToggleExpandedCommand}"
+                                                Visibility="{Binding IsRecipe, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        <ItemsControl ItemsSource="{Binding IngredientRows}"
+                                                      Margin="16,3,0,0">
+                                            <ItemsControl.Style>
+                                                <Style TargetType="ItemsControl">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ItemsControl.Style>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel>
+                                                        <TextBlock Text="{Binding Name}"
+                                                                   Foreground="White"
+                                                                   Width="120" />
+                                                        <TextBlock Text="{Binding ProgressText}"
+                                                                   Foreground="#DDDDDD"
+                                                                   Width="64" />
+                                                        <TextBlock Text="{Binding RemainingQuantity, StringFormat=Need: {0}}"
+                                                                   Foreground="#DDDDDD" />
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
         </Border>
     </Grid>
 </Window>

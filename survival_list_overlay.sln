@@ -5,6 +5,8 @@ VisualStudioVersion = 17.9.34607.119
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "survival_list_overlay", "survival_list_overlay\survival_list_overlay.csproj", "{B968D5C5-C6A7-46AC-8062-04CC7BF24480}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "survival_list_overlay.Tests", "survival_list_overlay.Tests\survival_list_overlay.Tests.csproj", "{0A8F97C8-7B84-4F54-9C15-11B5F0CB65AE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{B968D5C5-C6A7-46AC-8062-04CC7BF24480}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B968D5C5-C6A7-46AC-8062-04CC7BF24480}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B968D5C5-C6A7-46AC-8062-04CC7BF24480}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A8F97C8-7B84-4F54-9C15-11B5F0CB65AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A8F97C8-7B84-4F54-9C15-11B5F0CB65AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A8F97C8-7B84-4F54-9C15-11B5F0CB65AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A8F97C8-7B84-4F54-9C15-11B5F0CB65AE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

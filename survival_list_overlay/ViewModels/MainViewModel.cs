@@ -1,133 +1,170 @@
-﻿using survival_list_overlay.Models;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
-using System.Media;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
+using survival_list_overlay.Commands;
+using survival_list_overlay.Models;
+using survival_list_overlay.Services;
+using survival_list_overlay.Settings;
 
-namespace survival_list_overlay.ViewModels
+namespace survival_list_overlay.ViewModels;
 
+public sealed class MainViewModel : INotifyPropertyChanged
 {
-    public class MainViewModel : INotifyPropertyChanged
-    { 
-    public ObservableCollection<TrackedItem> Items { get; } = new();
+    private readonly IAudioCueService audioCueService;
+    private readonly IUserNotificationService notificationService;
+    private readonly OverlaySettings settings;
+    private TrackedItemViewModel? lastDeletedItem;
+    private int? lastDeletedItemIndex;
+    private string newItemName = string.Empty;
+    private string newItemTotal = string.Empty;
 
-        private const int MaxVisibleItems = 12;
-        private TrackedItem? lastDeletedItem;
-        private int? lastDeletedItemIndex;
-
-        private string newItemName = string.Empty;
-        private int newItemTotal;
-
-        public string NewItemName
-        {
-            get => newItemName;
-            set
-            {
-                if (newItemName != value)
-                {
-                    newItemName = value;
-                    OnPropertyChanged(nameof(NewItemName));
-                }
-            }
-        }
-
-        public int NewItemTotal
-        {
-            get => newItemTotal;
-            set
-            {
-                if (newItemTotal != value)
-                {
-                    newItemTotal = value;
-                    OnPropertyChanged(nameof(NewItemTotal));
-                }
-            }
-        }
-
-        public ICommand AddNewItemCommand { get; set; }
-        public ICommand RemoveItemCommand { get; set; }
-        public MainViewModel()
-        {
-            
-            foreach (var item in Items)
-            {
-                item.CompletionCallback += OnItemCompleted;
-               
-            }
-                AddNewItemCommand = new RelayCommand(_ => AddNewItem());
-                RemoveItemCommand = new RelayCommand(param => RemoveItem((TrackedItem)param!));
-
-        }
-
-        public void RemoveItem(TrackedItem item)
-        {
-            if (Items.Contains(item))
-            {
-                lastDeletedItemIndex = Items.IndexOf(item);
-                lastDeletedItem = item;
-
-                item.CompletionCallback -= OnItemCompleted;
-                Items.Remove(item);
-            }
-        }
-
-        public void UndoLastRemoval()
-        {
-            if (lastDeletedItem != null && lastDeletedItemIndex.HasValue)
-            {
-                Items.Insert(lastDeletedItemIndex.Value, lastDeletedItem);
-                lastDeletedItem.CompletionCallback += OnItemCompleted;
-
-                lastDeletedItem = null;
-                lastDeletedItemIndex = null;
-            }
-        }
-
-        private void AddNewItem()
-        {
-            var newItem = new TrackedItem
-            { 
-                Name = NewItemName,
-                Total = newItemTotal,
-                Progress = 0
-                };
-            AddItem(newItem);
-
-            NewItemName = string.Empty;
-            NewItemTotal = 0;
-        }
-
-        private bool CanAddNewItem()
-        {
-            return !string.IsNullOrWhiteSpace(NewItemName) && NewItemTotal > 0;
-        }
-
-        private void AddItem(TrackedItem item)
-        {
-            if (Items.Count < MaxVisibleItems)
-            {
-                item.CompletionCallback += OnItemCompleted;
-                Items.Add(item);
-            }
-            else
-            {
-                MessageBox.Show("Cannot add more items, list limit reached (12 Items)!", "Error1", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void OnItemCompleted(TrackedItem item)
+    public MainViewModel(
+        IUserNotificationService notificationService,
+        IAudioCueService audioCueService,
+        OverlaySettings? settings = null)
     {
-        SystemSounds.Exclamation.Play(); // Or use your own wav with SoundPlayer
+        this.notificationService = notificationService;
+        this.audioCueService = audioCueService;
+        this.settings = settings ?? new OverlaySettings();
+
+        AddNewItemCommand = new RelayCommand(_ => AddNewItem(), _ => CanAddNewItem());
+        RemoveItemCommand = new RelayCommand(RemoveItem, param => param is TrackedItemViewModel);
+        UndoLastRemovalCommand = new RelayCommand(_ => UndoLastRemoval(), _ => lastDeletedItem is not null);
     }
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged(string name) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+    public ObservableCollection<TrackedItemViewModel> Items { get; } = new();
+
+    public string Title => settings.Title;
+
+    public string NewItemName
+    {
+        get => newItemName;
+        set
+        {
+            if (newItemName == value)
+            {
+                return;
+            }
+
+            newItemName = value;
+            OnPropertyChanged(nameof(NewItemName));
+            RelayCommand.RefreshCanExecute();
+        }
     }
-    
+
+    public string NewItemTotal
+    {
+        get => newItemTotal;
+        set
+        {
+            if (newItemTotal == value)
+            {
+                return;
+            }
+
+            newItemTotal = value;
+            OnPropertyChanged(nameof(NewItemTotal));
+            RelayCommand.RefreshCanExecute();
+        }
+    }
+
+    public ICommand AddNewItemCommand { get; }
+    public ICommand RemoveItemCommand { get; }
+    public ICommand UndoLastRemovalCommand { get; }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void AddNewItem()
+    {
+        if (!TryGetNewItemTotal(out var total))
+        {
+            return;
+        }
+
+        var item = new TrackedItem
+        {
+            Name = NewItemName.Trim(),
+            Total = total,
+            Progress = 0
+        };
+
+        AddItem(new TrackedItemViewModel(item));
+        NewItemName = string.Empty;
+        NewItemTotal = string.Empty;
+    }
+
+    private bool CanAddNewItem()
+    {
+        return Items.Count < settings.MaxVisibleItems
+            && !string.IsNullOrWhiteSpace(NewItemName)
+            && TryGetNewItemTotal(out _);
+    }
+
+    private void AddItem(TrackedItemViewModel item)
+    {
+        if (Items.Count >= settings.MaxVisibleItems)
+        {
+            notificationService.ShowError(
+                $"Cannot add more items. The list limit is {settings.MaxVisibleItems} items.",
+                "List limit reached");
+            return;
+        }
+
+        item.Item.Completed += OnItemCompleted;
+        Items.Add(item);
+        RelayCommand.RefreshCanExecute();
+    }
+
+    private void RemoveItem(object? parameter)
+    {
+        if (parameter is not TrackedItemViewModel item)
+        {
+            return;
+        }
+
+        var itemIndex = Items.IndexOf(item);
+        if (itemIndex < 0)
+        {
+            return;
+        }
+
+        item.Item.Completed -= OnItemCompleted;
+        Items.RemoveAt(itemIndex);
+
+        lastDeletedItem?.Dispose();
+        lastDeletedItem = item;
+        lastDeletedItemIndex = itemIndex;
+        RelayCommand.RefreshCanExecute();
+    }
+
+    private void UndoLastRemoval()
+    {
+        if (lastDeletedItem is null || lastDeletedItemIndex is null)
+        {
+            return;
+        }
+
+        var insertIndex = Math.Min(lastDeletedItemIndex.Value, Items.Count);
+        lastDeletedItem.Item.Completed += OnItemCompleted;
+        Items.Insert(insertIndex, lastDeletedItem);
+
+        lastDeletedItem = null;
+        lastDeletedItemIndex = null;
+        RelayCommand.RefreshCanExecute();
+    }
+
+    private bool TryGetNewItemTotal(out int total)
+    {
+        return int.TryParse(NewItemTotal, out total) && total > 0;
+    }
+
+    private void OnItemCompleted(TrackedItem item)
+    {
+        audioCueService.PlayItemCompleted();
+    }
+
+    private void OnPropertyChanged(string propertyName)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
 }

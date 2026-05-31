@@ -1,101 +1,125 @@
-﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Windows.Input;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using WPF.UI.MVVM.Command;
 
+namespace survival_list_overlay.Models;
 
-namespace survival_list_overlay.Models
+public enum TrackingProgressStatus
 {
+    Unfinished,
+    Completed
+}
 
-    public class TrackedItem : INotifyPropertyChanged
+public sealed class TrackedItem : INotifyPropertyChanged
+{
+    private string? category;
+    private string name = string.Empty;
+    private int progress;
+    private TrackingProgressStatus progressStatus = TrackingProgressStatus.Unfinished;
+    private int total;
+
+    public string Name
     {
-
-        //Var Properties
-        private int progress;
-        private string progressStatus = "unfinished";
-        private string? category = string.Empty;
-        public string Name { get; set; }
-        public int Total { get; set; }
-
-        public string? Category
+        get => name;
+        set
         {
-            get => category;
-            set
-                {
-                if (category != value)
-                {
-                    category = value;
-                    OnPropertyChanged(nameof(Category));
-                }
-            }
-        }
-        public int Progress
-        {
-            get => progress;
-            set
+            if (name == value)
             {
-                if (progress != value)
-                {
-                    progress = value;
-                    OnPropertyChanged(nameof(Progress));
-                    ProgressStatus = (progress >= Total) ? "completed" : "unfinished";
-
-                }
+                return;
             }
+
+            name = value;
+            OnPropertyChanged(nameof(Name));
         }
-        public string ProgressStatus
+    }
+
+    public int Total
+    {
+        get => total;
+        set
         {
-            get => progressStatus;
-            private set
+            var normalizedValue = Math.Max(0, value);
+            if (total == normalizedValue)
             {
-                if (progressStatus != value)
-                {
-                    progressStatus = value;
-                    OnPropertyChanged(nameof(ProgressStatus));
-                    if (progressStatus == "completed")
-                        CompletionCallback?.Invoke(this);
-                }
+                return;
             }
-        }
 
-        //Event-related
-        public event PropertyChangedEventHandler PropertyChanged;
-        public event Action<TrackedItem> CompletionCallback;
+            total = normalizedValue;
+            OnPropertyChanged(nameof(Total));
 
-        protected void OnPropertyChanged(string prop) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
-
-        /*private void UpdateStatus()
-        {
-            if (Progress >= Total)
-                ProgressStatus = "completed";
+            if (progress > total)
+            {
+                Progress = total;
+            }
             else
-                ProgressStatus = "unfinished";
-
-            
-                
+            {
+                UpdateProgressStatus();
+            }
         }
-        */
-        
-        //ICommands
-        public ICommand IncrementCommand { get; }
-        public ICommand DecrementCommand { get; }
+    }
 
-        //Constructor
-        public TrackedItem()
+    public int Progress
+    {
+        get => progress;
+        set
         {
-            IncrementCommand = new RelayCommand(_ => Progress++,  _ => Progress < Total );
-            DecrementCommand = new RelayCommand( _ => Progress--, _ => Progress > 0);
-            
+            var normalizedValue = Math.Clamp(value, 0, Total);
+            if (progress == normalizedValue)
+            {
+                return;
+            }
+
+            progress = normalizedValue;
+            OnPropertyChanged(nameof(Progress));
+            UpdateProgressStatus();
         }
-
-    }
-        
-
     }
 
+    public string? Category
+    {
+        get => category;
+        set
+        {
+            if (category == value)
+            {
+                return;
+            }
+
+            category = value;
+            OnPropertyChanged(nameof(Category));
+        }
+    }
+
+    public TrackingProgressStatus ProgressStatus
+    {
+        get => progressStatus;
+        private set
+        {
+            if (progressStatus == value)
+            {
+                return;
+            }
+
+            progressStatus = value;
+            OnPropertyChanged(nameof(ProgressStatus));
+
+            if (progressStatus == TrackingProgressStatus.Completed)
+            {
+                Completed?.Invoke(this);
+            }
+        }
+    }
+
+    public event Action<TrackedItem>? Completed;
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void UpdateProgressStatus()
+    {
+        ProgressStatus = Total > 0 && Progress >= Total
+            ? TrackingProgressStatus.Completed
+            : TrackingProgressStatus.Unfinished;
+    }
+
+    private void OnPropertyChanged(string propertyName)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+}

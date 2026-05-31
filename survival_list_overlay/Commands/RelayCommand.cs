@@ -1,13 +1,15 @@
-﻿using System.Windows.Input;
+using System.Windows.Input;
 
-public class RelayCommand : ICommand
+namespace survival_list_overlay.Commands;
+
+public sealed class RelayCommand : ICommand
 {
-    private readonly Action<object> execute;
-    private readonly Predicate<object>? canExecute;
+    private readonly Predicate<object?>? canExecute;
+    private readonly Action<object?> execute;
 
-    public RelayCommand(Action<object> execute, Predicate<object>? canExecute = null)
+    public RelayCommand(Action<object?> execute, Predicate<object?>? canExecute = null)
     {
-        this.execute = execute;
+        this.execute = execute ?? throw new ArgumentNullException(nameof(execute));
         this.canExecute = canExecute;
     }
 
@@ -17,7 +19,9 @@ public class RelayCommand : ICommand
         remove => CommandManager.RequerySuggested -= value;
     }
 
-    public bool CanExecute(object? parameter) => canExecute?.Invoke(parameter!) ?? true;
+    public bool CanExecute(object? parameter) => canExecute?.Invoke(parameter) ?? true;
 
-    public void Execute(object? parameter) => execute(parameter!);
+    public void Execute(object? parameter) => execute(parameter);
+
+    public static void RefreshCanExecute() => CommandManager.InvalidateRequerySuggested();
 }

@@ -82,10 +82,17 @@ public sealed class JsonOverlayDataStore : IOverlayDataStore
 
     private static void EnsureProfileShape(UserProfile profile, GameRegistry registry)
     {
-        profile.SchemaVersion = Math.Max(1, profile.SchemaVersion);
+        profile.SchemaVersion = Math.Max(2, profile.SchemaVersion);
         profile.ActiveGameId = string.IsNullOrWhiteSpace(profile.ActiveGameId)
             ? registry.GameId
             : profile.ActiveGameId;
+        profile.Overlay ??= new OverlayUserSettings();
+        profile.Overlay.Theme ??= new OverlayThemeSettings();
+        profile.Overlay.Keybinds ??= new OverlayKeybindSettings();
+        profile.Overlay.Width = Math.Clamp(profile.Overlay.Width, 360, 1400);
+        profile.Overlay.Height = Math.Clamp(profile.Overlay.Height, 240, 1000);
+        profile.Overlay.Scale = Math.Clamp(profile.Overlay.Scale, 0.75, 2.0);
+        profile.Overlay.Opacity = Math.Clamp(profile.Overlay.Opacity, 0.35, 1.0);
 
         if (profile.Lists.Count == 0)
         {
@@ -99,6 +106,16 @@ public sealed class JsonOverlayDataStore : IOverlayDataStore
 
         foreach (var list in profile.Lists)
         {
+            if (string.IsNullOrWhiteSpace(list.Id))
+            {
+                list.Id = Guid.NewGuid().ToString("N");
+            }
+
+            if (string.IsNullOrWhiteSpace(list.Name))
+            {
+                list.Name = list.Type == TrackedListType.Counting ? "Counting" : "Main";
+            }
+
             if (list.Entries.Count > OverlayLimits.MaxEntriesPerList)
             {
                 list.Entries = list.Entries.Take(OverlayLimits.MaxEntriesPerList).ToList();
@@ -167,12 +184,13 @@ public static class DefaultUserProfileFactory
     public static UserProfile Create(string gameId)
     {
         var defaultList = CreateDefaultList();
+        var countingList = CreateCountingList();
         return new UserProfile
         {
-            SchemaVersion = 1,
+            SchemaVersion = 2,
             ActiveGameId = gameId,
             ActiveListId = defaultList.Id,
-            Lists = { defaultList }
+            Lists = { defaultList, countingList }
         };
     }
 
@@ -184,6 +202,17 @@ public static class DefaultUserProfileFactory
             Name = "Main",
             Type = TrackedListType.Standard,
             SortMode = TrackedListSortMode.Priority
+        };
+    }
+
+    public static TrackedList CreateCountingList()
+    {
+        return new TrackedList
+        {
+            Id = "counting",
+            Name = "Counting",
+            Type = TrackedListType.Counting,
+            SortMode = TrackedListSortMode.Alphabetical
         };
     }
 }

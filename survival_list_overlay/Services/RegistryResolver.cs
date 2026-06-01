@@ -37,7 +37,7 @@ public sealed class RegistryResolver
     {
         var normalizedQuery = query.Trim();
         var candidates = registry.Items
-            .Select(item => new RegistrySearchResult(RegistryEntryType.Item, item.Id, item.Name, string.Join(", ", item.Tags)))
+            .Select(item => new RegistrySearchResult(RegistryEntryType.Item, item.Id, item.Name, CreateItemSummary(item)))
             .Concat(registry.Recipes.Select(recipe => new RegistrySearchResult(
                 RegistryEntryType.Recipe,
                 recipe.Id,
@@ -72,6 +72,7 @@ public sealed class RegistryResolver
         {
             Id = id,
             Name = name.Trim(),
+            Category = "Custom",
             Tags = { "custom" }
         };
         registry.Items.Add(item);
@@ -83,6 +84,19 @@ public sealed class RegistryResolver
         return candidate.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase)
             || candidate.Id.Contains(query, StringComparison.OrdinalIgnoreCase)
             || candidate.Summary.Contains(query, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string CreateItemSummary(RegistryItem item)
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(item.Category))
+        {
+            parts.Add(item.Category);
+        }
+
+        parts.AddRange(item.Tags);
+        parts.AddRange(item.Aliases);
+        return string.Join(", ", parts.Distinct(StringComparer.OrdinalIgnoreCase));
     }
 
     private static string CreateId(string name)

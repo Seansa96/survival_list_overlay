@@ -1,6 +1,6 @@
 # Survival List Overlay Documentation
 
-Last reviewed: 2026-05-31
+Last reviewed: 2026-06-01
 
 This document describes the current implementation modules, public interfaces, data models, view models, services, UI workflow, persistence behavior, and test harness.
 
@@ -725,11 +725,28 @@ Manual checks cover:
 
 ## Current Review Notes
 
-- `Counting` list mode exists in the model but does not yet have a dedicated UI workflow.
-- Multiple lists are represented in the data model, but the UI currently operates on the active list only and does not expose list creation/switching.
+- `Counting` list mode now has a switchable UI workflow. It tracks collected quantity rather than target/remaining quantity.
+- Multiple lists are represented in the data model. The UI can switch between the first standard and counting lists, but does not yet expose full list creation, renaming, or deletion.
 - Registry import/export is not implemented yet; the default registry is created in code.
 - Recipe nesting depth is not enforced yet.
-- `EmptyStateText` exists in `MainViewModel` but is not currently rendered in `MainWindow.xaml`.
+- Overlay window position, size, opacity, scale, interaction mode, theme defaults, and keybind defaults are persisted in `UserProfile.Overlay`.
+- Locked mode prevents accidental drag/resize. Edit mode exposes the title/header controls and allows resize.
 - `OverlaySettings.MaxVisibleItems` exists but is not the source of truth for entry limits; `OverlayLimits.MaxEntriesPerList` is.
 - Completion audio is tied to quantity changes crossing the target threshold.
 - Custom item creation happens through search text when no search result is selected.
+- Normal Add updates an existing tracked item/recipe by increasing its target or count. Explicit duplicate creation is available through a separate command.
+- Standard item rows show direct target plus recipe ingredient demand when recipes require the same material.
+
+## Usability Refactor Notes
+
+The 2026-06-01 usability refactor added the first pass of the gameplay-safe overlay model:
+
+- `OverlayInteractionMode.Locked` and `OverlayInteractionMode.Edit`.
+- `OverlayUserSettings`, `OverlayThemeSettings`, and `OverlayKeybindSettings`.
+- persisted overlay bounds and display preferences in the user profile.
+- explicit duplicate entry creation separate from normal Add.
+- counting-list UI semantics for collected quantities.
+- recipe-aware material demand aggregation for standard item rows.
+- darker styled controls and icon-style row actions in the WPF shell.
+
+True OS-level click-through, full keybind editing/conflict detection, theme editing UI, registry import/export, and recipe nesting expansion remain future work.

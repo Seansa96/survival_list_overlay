@@ -5,13 +5,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="{Binding Title}"
-        SizeToContent="Height"
-        Width="560"
+        Width="620"
+        Height="360"
+        MinWidth="420"
+        MinHeight="260"
         MouseDown="Window_MouseDown"
         PreviewKeyDown="Window_PreviewKeyDown"
         WindowStyle="None"
         AllowsTransparency="True"
-        ResizeMode="NoResize"
         Background="Transparent"
         Topmost="True"
         ShowInTaskbar="True">
@@ -19,13 +20,17 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
 
-        <SolidColorBrush x:Key="OverlayPanelBrush" Color="#B0111111" />
-        <SolidColorBrush x:Key="OverlayBandBrush" Color="#331E1E1E" />
-        <SolidColorBrush x:Key="OverlayRowBrush" Color="#22181818" />
-        <SolidColorBrush x:Key="OverlayRowBorderBrush" Color="#33FFFFFF" />
+        <SolidColorBrush x:Key="OverlayPanelBrush" Color="#E0101010" />
+        <SolidColorBrush x:Key="OverlayBandBrush" Color="#C81D1F22" />
+        <SolidColorBrush x:Key="OverlayRowBrush" Color="#A826282B" />
+        <SolidColorBrush x:Key="OverlayRowSelectedBrush" Color="#C0323A42" />
+        <SolidColorBrush x:Key="OverlayBorderBrush" Color="#44FFFFFF" />
+        <SolidColorBrush x:Key="ControlBrush" Color="#FF24282D" />
+        <SolidColorBrush x:Key="ControlHoverBrush" Color="#FF30363D" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#FF8CC8FF" />
         <SolidColorBrush x:Key="PrimaryTextBrush" Color="#FFFFFFFF" />
-        <SolidColorBrush x:Key="SecondaryTextBrush" Color="#FFD8D8D8" />
-        <SolidColorBrush x:Key="MutedTextBrush" Color="#FFAAAAAA" />
+        <SolidColorBrush x:Key="SecondaryTextBrush" Color="#FFD6DADF" />
+        <SolidColorBrush x:Key="MutedTextBrush" Color="#FF9CA3AA" />
 
         <Style x:Key="PrimaryTextStyle" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
@@ -46,29 +51,53 @@
             <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
         </Style>
 
-        <Style x:Key="CompactButtonStyle" TargetType="Button">
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource ControlBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource OverlayBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CaretBrush" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="Padding" Value="6,2" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <Style TargetType="ComboBox">
+            <Setter Property="Background" Value="{StaticResource ControlBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource OverlayBorderBrush}" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <Style x:Key="IconButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="28" />
-            <Setter Property="Height" Value="24" />
+            <Setter Property="Height" Value="26" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="4,0,0,0" />
-            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Background" Value="{StaticResource ControlBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource OverlayBorderBrush}" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
-        <Style x:Key="CompactToggleStyle" TargetType="ToggleButton">
-            <Setter Property="Height" Value="24" />
+        <Style x:Key="TextButtonStyle" TargetType="Button" BasedOn="{StaticResource IconButtonStyle}">
+            <Setter Property="Width" Value="Auto" />
+            <Setter Property="MinWidth" Value="44" />
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="FontSize" Value="11" />
+        </Style>
+
+        <Style x:Key="TogglePillStyle" TargetType="ToggleButton">
+            <Setter Property="Height" Value="26" />
             <Setter Property="Padding" Value="8,0" />
             <Setter Property="Margin" Value="6,0,0,0" />
+            <Setter Property="Background" Value="{StaticResource ControlBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource OverlayBorderBrush}" />
             <Setter Property="FontSize" Value="11" />
             <Setter Property="VerticalAlignment" Value="Center" />
-        </Style>
-
-        <Style x:Key="EntryRowBorderStyle" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource OverlayRowBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource OverlayRowBorderBrush}" />
-            <Setter Property="BorderThickness" Value="0,0,0,1" />
-            <Setter Property="Padding" Value="8,6" />
-            <Setter Property="Margin" Value="0,0,0,4" />
         </Style>
 
         <Style x:Key="TransparentListBoxStyle" TargetType="ListBox">
@@ -76,36 +105,60 @@
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding" Value="0" />
         </Style>
+
+        <Style x:Key="EntryListBoxItemStyle" TargetType="ListBoxItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+
+        <Style x:Key="EntryRowBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource OverlayRowBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource OverlayBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
     </Window.Resources>
 
     <Grid x:Name="RootGrid"
           MouseEnter="RootGrid_MouseEnter"
           MouseLeave="RootGrid_MouseLeave">
-
-        <Border x:Name="TitleBar"
-                Background="#66000000"
-                Height="30"
-                VerticalAlignment="Top"
-                CornerRadius="8,8,0,0"
-                Visibility="Collapsed">
-            <DockPanel>
-                <TextBlock Text="{Binding Title}"
-                           Style="{StaticResource PrimaryTextStyle}"
-                           Margin="10,0" />
-                <Button Content="X"
-                        DockPanel.Dock="Right"
-                        Click="Close_Click"
-                        Width="30"
-                        Height="30"
-                        Padding="0" />
-            </DockPanel>
-        </Border>
-
         <Border Background="{StaticResource OverlayPanelBrush}"
-                CornerRadius="12"
-                Padding="12"
-                Margin="0,30,0,0">
+                BorderBrush="{StaticResource OverlayBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="10">
             <DockPanel LastChildFill="True">
+                <Border x:Name="TitleBar"
+                        DockPanel.Dock="Top"
+                        Background="{StaticResource OverlayBandBrush}"
+                        CornerRadius="6"
+                        Padding="8,6"
+                        Margin="0,0,0,8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding Title}"
+                                   Style="{StaticResource PrimaryTextStyle}" />
+                        <Button Grid.Column="1"
+                                Content="{Binding InteractionModeText}"
+                                Command="{Binding ToggleInteractionModeCommand}"
+                                Style="{StaticResource TextButtonStyle}"
+                                ToolTip="Toggle locked/edit mode" />
+                        <Button Grid.Column="2"
+                                Content="×"
+                                Click="Close_Click"
+                                Style="{StaticResource IconButtonStyle}"
+                                ToolTip="Close overlay" />
+                    </Grid>
+                </Border>
+
                 <Border DockPanel.Dock="Top"
                         Background="{StaticResource OverlayBandBrush}"
                         CornerRadius="6"
@@ -114,27 +167,41 @@
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="112" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="118" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
                         <StackPanel>
                             <TextBlock Text="{Binding HeaderText}"
                                        Style="{StaticResource PrimaryTextStyle}" />
-                            <TextBlock Text="{Binding EntryCountText}"
-                                       Style="{StaticResource MutedTextStyle}"
-                                       Margin="0,2,0,0" />
+                            <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                <TextBlock Text="{Binding EntryCountText}"
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <TextBlock Text="  •  "
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <TextBlock Text="{Binding ListModeText}"
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <TextBlock Text="  •  "
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <TextBlock Text="{Binding InteractionModeText}"
+                                           Style="{StaticResource MutedTextStyle}" />
+                            </StackPanel>
                         </StackPanel>
 
-                        <ComboBox Grid.Column="1"
-                                  Width="104"
-                                  Height="24"
+                        <Button Grid.Column="1"
+                                Content="{Binding ListModeText}"
+                                Command="{Binding SwitchListTypeCommand}"
+                                Style="{StaticResource TextButtonStyle}"
+                                ToolTip="Switch standard/counting list" />
+                        <ComboBox Grid.Column="2"
+                                  Width="110"
                                   Margin="8,0,0,0"
                                   ItemsSource="{Binding SortModes}"
                                   SelectedItem="{Binding SelectedSortMode}" />
-                        <ToggleButton Grid.Column="2"
-                                      Content="Favs"
-                                      Style="{StaticResource CompactToggleStyle}"
+                        <ToggleButton Grid.Column="3"
+                                      Content="★"
+                                      Style="{StaticResource TogglePillStyle}"
                                       IsChecked="{Binding ShowFavoritesOnly}"
                                       ToolTip="Show favorite entries" />
                     </Grid>
@@ -149,39 +216,67 @@
                         <Grid DockPanel.Dock="Top">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="64" />
-                                <ColumnDefinition Width="58" />
+                                <ColumnDefinition Width="28" />
+                                <ColumnDefinition Width="56" />
+                                <ColumnDefinition Width="28" />
+                                <ColumnDefinition Width="54" />
+                                <ColumnDefinition Width="54" />
                             </Grid.ColumnDefinitions>
 
                             <TextBox x:Name="SearchBox"
                                      Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
                                      KeyDown="SearchBox_KeyDown"
-                                     MinWidth="260"
-                                     Height="24" />
-                            <TextBox Grid.Column="1"
+                                     MinWidth="220"
+                                     Height="26" />
+                            <Button Grid.Column="1"
+                                    Content="−"
+                                    Command="{Binding DecreaseNewTargetQuantityCommand}"
+                                    Style="{StaticResource IconButtonStyle}"
+                                    Margin="6,0,0,0"
+                                    ToolTip="Decrease add quantity" />
+                            <TextBox Grid.Column="2"
                                      Text="{Binding NewTargetQuantity, UpdateSourceTrigger=PropertyChanged}"
                                      Margin="6,0,0,0"
-                                     Height="24"
-                                     HorizontalContentAlignment="Center" />
-                            <Button Grid.Column="2"
+                                     Height="26"
+                                     HorizontalContentAlignment="Center"
+                                     VerticalContentAlignment="Center" />
+                            <Button Grid.Column="3"
+                                    Content="+"
+                                    Command="{Binding IncreaseNewTargetQuantityCommand}"
+                                    Style="{StaticResource IconButtonStyle}"
+                                    ToolTip="Increase add quantity" />
+                            <Button Grid.Column="4"
                                     Content="Add"
-                                    Height="24"
-                                    Margin="6,0,0,0"
-                                    Command="{Binding AddSelectedResultCommand}" />
+                                    Command="{Binding AddSelectedResultCommand}"
+                                    Style="{StaticResource TextButtonStyle}" />
+                            <Button Grid.Column="5"
+                                    Content="New"
+                                    Command="{Binding AddDuplicateSelectedResultCommand}"
+                                    Style="{StaticResource TextButtonStyle}"
+                                    ToolTip="Create a duplicate entry intentionally" />
                         </Grid>
 
                         <ListBox DockPanel.Dock="Bottom"
                                  ItemsSource="{Binding SearchResults}"
                                  SelectedItem="{Binding SelectedSearchResult}"
-                                 Height="76"
-                                 Margin="0,8,0,0"
-                                 Style="{StaticResource TransparentListBoxStyle}">
+                                 Height="64"
+                                 Margin="0,8,0,0">
+                            <ListBox.Style>
+                                <Style TargetType="ListBox" BasedOn="{StaticResource TransparentListBoxStyle}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasSearchQuery}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListBox.Style>
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <Grid Margin="0,1">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="56" />
-                                            <ColumnDefinition Width="170" />
+                                            <ColumnDefinition Width="58" />
+                                            <ColumnDefinition Width="160" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="{Binding EntryTypeLabel}"
@@ -220,17 +315,8 @@
 
                     <ListBox ItemsSource="{Binding Entries}"
                              SelectedItem="{Binding SelectedEntry}"
-                             MinHeight="112">
-                        <ListBox.Style>
-                            <Style TargetType="ListBox" BasedOn="{StaticResource TransparentListBoxStyle}">
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Entries.Count}" Value="0">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ListBox.Style>
+                             ItemContainerStyle="{StaticResource EntryListBoxItemStyle}"
+                             Style="{StaticResource TransparentListBoxStyle}">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Border Style="{StaticResource EntryRowBorderStyle}">
@@ -241,17 +327,22 @@
                                         </Grid.RowDefinitions>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="104" />
-                                            <ColumnDefinition Width="104" />
-                                            <ColumnDefinition Width="128" />
+                                            <ColumnDefinition Width="130" />
+                                            <ColumnDefinition Width="112" />
+                                            <ColumnDefinition Width="132" />
                                         </Grid.ColumnDefinitions>
 
                                         <StackPanel>
                                             <TextBlock Text="{Binding DisplayName}"
                                                        Style="{StaticResource PrimaryTextStyle}" />
-                                            <TextBlock Text="{Binding EntryTypeLabel}"
-                                                       Style="{StaticResource MutedTextStyle}"
-                                                       Margin="0,2,0,0" />
+                                            <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                <TextBlock Text="{Binding EntryTypeLabel}"
+                                                           Style="{StaticResource MutedTextStyle}" />
+                                                <TextBlock Text="  "
+                                                           Style="{StaticResource MutedTextStyle}" />
+                                                <TextBlock Text="{Binding DemandText}"
+                                                           Style="{StaticResource MutedTextStyle}" />
+                                            </StackPanel>
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="1"
@@ -268,58 +359,63 @@
                                         <StackPanel Grid.Column="2"
                                                     Orientation="Horizontal"
                                                     HorizontalAlignment="Center">
-                                            <Button Content="-"
-                                                    Style="{StaticResource CompactButtonStyle}"
+                                            <Button Content="−"
+                                                    Style="{StaticResource IconButtonStyle}"
                                                     Margin="0"
                                                     Command="{Binding DecrementCommand}"
                                                     ToolTip="Decrease current quantity" />
                                             <Button Content="+"
-                                                    Style="{StaticResource CompactButtonStyle}"
+                                                    Style="{StaticResource IconButtonStyle}"
                                                     Command="{Binding IncrementCommand}"
                                                     ToolTip="Increase current quantity" />
-                                            <TextBox Text="{Binding Priority, UpdateSourceTrigger=LostFocus}"
-                                                     Width="32"
-                                                     Height="24"
-                                                     Margin="4,0,0,0"
-                                                     HorizontalContentAlignment="Center"
-                                                     ToolTip="Priority" />
+                                            <StackPanel Margin="4,0,0,0">
+                                                <Button Content="▲"
+                                                        Style="{StaticResource IconButtonStyle}"
+                                                        Width="24"
+                                                        Height="13"
+                                                        Margin="0"
+                                                        FontSize="8"
+                                                        Command="{Binding IncreasePriorityCommand}"
+                                                        ToolTip="Increase priority" />
+                                                <Button Content="▼"
+                                                        Style="{StaticResource IconButtonStyle}"
+                                                        Width="24"
+                                                        Height="13"
+                                                        Margin="0"
+                                                        FontSize="8"
+                                                        Command="{Binding DecreasePriorityCommand}"
+                                                        ToolTip="Decrease priority" />
+                                            </StackPanel>
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="3"
                                                     Orientation="Horizontal"
                                                     HorizontalAlignment="Right">
-                                            <Button Content="F"
-                                                    Style="{StaticResource CompactButtonStyle}"
+                                            <Button Content="{Binding FavoriteText}"
+                                                    Style="{StaticResource IconButtonStyle}"
                                                     Command="{Binding ToggleFavoriteCommand}"
                                                     ToolTip="Toggle favorite" />
-                                            <Button Content="P"
-                                                    Style="{StaticResource CompactButtonStyle}"
+                                            <Button Content="{Binding StickyText}"
+                                                    Style="{StaticResource IconButtonStyle}"
                                                     Command="{Binding ToggleStickyCommand}"
                                                     ToolTip="Toggle sticky" />
-                                            <Button Content="X"
-                                                    Style="{StaticResource CompactButtonStyle}"
+                                            <Button Content="×"
+                                                    Style="{StaticResource IconButtonStyle}"
                                                     Command="{Binding DataContext.RemoveEntryCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                     CommandParameter="{Binding}"
                                                     ToolTip="Remove entry" />
+                                            <Button Content="{Binding ExpandText}"
+                                                    Style="{StaticResource IconButtonStyle}"
+                                                    Command="{Binding ToggleExpandedCommand}"
+                                                    ToolTip="Expand recipe ingredients" />
                                         </StackPanel>
 
                                         <StackPanel Grid.Row="1"
                                                     Grid.ColumnSpan="4"
-                                                    Margin="16,6,0,0">
-                                            <Grid Visibility="{Binding IsRecipe, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="56" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="{Binding IngredientSummary}"
-                                                           Style="{StaticResource MutedTextStyle}" />
-                                                <Button Grid.Column="1"
-                                                        Content="{Binding ExpandText}"
-                                                        Height="22"
-                                                        Margin="8,0,0,0"
-                                                        Command="{Binding ToggleExpandedCommand}"
-                                                        ToolTip="Expand recipe ingredients" />
-                                            </Grid>
+                                                    Margin="16,6,0,0"
+                                                    Visibility="{Binding IsRecipe, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <TextBlock Text="{Binding IngredientSummary}"
+                                                       Style="{StaticResource MutedTextStyle}" />
 
                                             <ItemsControl ItemsSource="{Binding IngredientRows}"
                                                           Margin="14,4,0,0">

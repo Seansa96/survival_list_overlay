@@ -26,6 +26,12 @@ public enum TrackedListSortMode
     Alphabetical
 }
 
+public enum OverlayInteractionMode
+{
+    Locked,
+    Edit
+}
+
 public sealed class GameRegistry
 {
     public int SchemaVersion { get; set; } = 1;
@@ -40,7 +46,9 @@ public sealed class RegistryItem
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Icon { get; set; }
+    public string? Category { get; set; }
     public List<string> Tags { get; set; } = new();
+    public List<string> Aliases { get; set; } = new();
 }
 
 public sealed class RegistryRecipe
@@ -61,10 +69,48 @@ public sealed class RecipeIngredient
 
 public sealed class UserProfile
 {
-    public int SchemaVersion { get; set; } = 1;
+    public int SchemaVersion { get; set; } = 2;
     public string ActiveGameId { get; set; } = "manual";
     public string ActiveListId { get; set; } = "main";
     public List<TrackedList> Lists { get; set; } = new();
+    public OverlayUserSettings Overlay { get; set; } = new();
+}
+
+public sealed class OverlayUserSettings
+{
+    public OverlayInteractionMode InteractionMode { get; set; } = OverlayInteractionMode.Locked;
+    public double Left { get; set; } = 120;
+    public double Top { get; set; } = 120;
+    public double Width { get; set; } = 620;
+    public double Height { get; set; } = 360;
+    public double Scale { get; set; } = 1.0;
+    public double Opacity { get; set; } = 0.94;
+    public OverlayThemeSettings Theme { get; set; } = new();
+    public OverlayKeybindSettings Keybinds { get; set; } = new();
+}
+
+public sealed class OverlayThemeSettings
+{
+    public string FontFamily { get; set; } = "Segoe UI";
+    public double FontSize { get; set; } = 12;
+    public string BackgroundColor { get; set; } = "#D0101010";
+    public string PanelColor { get; set; } = "#E01A1A1A";
+    public string AccentColor { get; set; } = "#FF8CC8FF";
+}
+
+public sealed class OverlayKeybindSettings
+{
+    public string ToggleOverlay { get; set; } = "Ctrl+H";
+    public string ToggleInteractionMode { get; set; } = "Ctrl+L";
+    public string FocusSearch { get; set; } = "Ctrl+F";
+    public string AddSelected { get; set; } = "Enter";
+    public string IncrementSelected { get; set; } = "Plus";
+    public string DecrementSelected { get; set; } = "Minus";
+    public string NextEntry { get; set; } = "Down";
+    public string PreviousEntry { get; set; } = "Up";
+    public string ToggleFavorites { get; set; } = "Ctrl+G";
+    public string SwitchList { get; set; } = "Ctrl+Tab";
+    public string ToggleRecipeExpanded { get; set; } = "E";
 }
 
 public sealed class TrackedList

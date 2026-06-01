@@ -9,7 +9,12 @@ var tests = new (string Name, Action Test)[]
     ("sticky removal requires confirmation", StickyRemovalRequiresConfirmation),
     ("sorting supports priority and alphabetical", SortingSupportsPriorityAndAlphabetical),
     ("json persistence round trips registry and profile separately", JsonPersistenceRoundTrips),
-    ("recipes expose expandable ingredient requirements", RecipesExposeIngredients)
+    ("recipes expose expandable ingredient requirements", RecipesExposeIngredients),
+    ("duplicate adds update existing entry by default", DuplicateAddsUpdateExistingEntry),
+    ("explicit duplicate adds create a second entry", ExplicitDuplicateAddsCreateSecondEntry),
+    ("counting mode tracks collected quantity", CountingModeTracksCollectedQuantity),
+    ("recipe demand aggregates into item rows", RecipeDemandAggregatesIntoItemRows),
+    ("overlay settings persist", OverlaySettingsPersist)
 };
 
 var failures = 0;
@@ -152,6 +157,76 @@ static void RecipesExposeIngredients()
 
     Assert.True(recipeEntry.IsExpanded, "Expected recipe to expand.");
     Assert.Equal(10, recipeEntry.IngredientRows.Single().RequiredQuantity, "Expected workbench to require 10 wood.");
+}
+
+static void DuplicateAddsUpdateExistingEntry()
+{
+    var (viewModel, _, _) = CreateViewModel();
+
+    AddSearchEntry(viewModel, "wood", 10);
+    AddSearchEntry(viewModel, "wood", 5);
+
+    Assert.Equal(1, viewModel.Entries.Count, "Expected duplicate add to update the existing entry.");
+    Assert.Equal(15, viewModel.Entries.Single().TargetQuantity, "Expected duplicate add to increase target quantity.");
+}
+
+static void ExplicitDuplicateAddsCreateSecondEntry()
+{
+    var (viewModel, _, _) = CreateViewModel();
+
+    AddSearchEntry(viewModel, "wood", 10);
+    viewModel.SearchQuery = "wood";
+    viewModel.NewTargetQuantity = "5";
+    viewModel.SelectedSearchResult = viewModel.SearchResults.First(result => result.EntryType == RegistryEntryType.Item);
+    viewModel.AddDuplicateSelectedResultCommand.Execute(null);
+
+    Assert.Equal(2, viewModel.Entries.Count, "Expected explicit duplicate add to create a second entry.");
+}
+
+static void CountingModeTracksCollectedQuantity()
+{
+    var (viewModel, _, _) = CreateViewModel();
+
+    viewModel.SwitchListTypeCommand.Execute(null);
+    AddSearchEntry(viewModel, "copper", 2);
+    AddSearchEntry(viewModel, "copper", 3);
+    AddSearchEntry(viewModel, "copper", 1);
+
+    Assert.True(viewModel.IsCountingList, "Expected switch command to activate the counting list.");
+    Assert.Equal(1, viewModel.Entries.Count, "Expected counting duplicates to merge into one row.");
+    Assert.Equal(6, viewModel.Entries.Single().CurrentQuantity, "Expected counting mode to accumulate collected quantity.");
+    Assert.Contains("Count: 6", viewModel.Entries.Single().ProgressText, "Expected counting row to show count language.");
+}
+
+static void RecipeDemandAggregatesIntoItemRows()
+{
+    var (viewModel, _, _) = CreateViewModel();
+
+    AddSearchEntry(viewModel, "workbench", 1, RegistryEntryType.Recipe);
+    AddSearchEntry(viewModel, "wood", 7, RegistryEntryType.Item);
+
+    var wood = viewModel.Entries.Single(entry => entry.DisplayName == "Wood");
+
+    Assert.Contains("17", wood.ProgressText, "Expected item progress to include direct and recipe demand.");
+    Assert.Contains("Recipes 10", wood.DemandText, "Expected item demand text to include recipe demand.");
+}
+
+static void OverlaySettingsPersist()
+{
+    var data = CreateData();
+    data.Profile.Overlay.Left = 42;
+    data.Profile.Overlay.Top = 84;
+    data.Profile.Overlay.Width = 700;
+    data.Profile.Overlay.Height = 420;
+    data.Profile.Overlay.InteractionMode = OverlayInteractionMode.Edit;
+
+    var viewModel = CreateViewModelWithData(data).ViewModel;
+
+    Assert.Equal(42d, viewModel.OverlaySettings.Left, "Expected overlay left to load.");
+    Assert.Equal(84d, viewModel.OverlaySettings.Top, "Expected overlay top to load.");
+    Assert.Equal(700d, viewModel.OverlaySettings.Width, "Expected overlay width to load.");
+    Assert.Equal(420d, viewModel.OverlaySettings.Height, "Expected overlay height to load.");
+    Assert.True(viewModel.IsEditMode, "Expected edit mode to load.");
 }
 
 static void AddSearchEntry(

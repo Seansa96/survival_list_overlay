@@ -9,6 +9,7 @@ This guide defines the visual rules for the Survival List Overlay. The overlay i
 - Make tracked entries the visual center after items are added.
 - Let search results feel secondary unless the user is actively searching.
 - Preserve mouse and keyboard parity for every common action.
+- Treat locked mode as the normal gameplay state and edit mode as an intentional configuration state.
 
 ## Spacing And Alignment
 
@@ -17,6 +18,7 @@ This guide defines the visual rules for the Survival List Overlay. The overlay i
 - Keep repeated row controls aligned by using stable grid columns.
 - Avoid text labels that change button width between states.
 - Use fixed-size action buttons for repeated row actions.
+- Keep title/header controls visually integrated with the main overlay frame.
 
 ## Text Hierarchy
 
@@ -32,6 +34,8 @@ This guide defines the visual rules for the Survival List Overlay. The overlay i
 - Priority controls should be visually quieter than quantity controls.
 - Favorite, sticky, and remove actions should be compact and consistently aligned.
 - Selected rows should remain readable against the transparent overlay background.
+- Use icon-style buttons for compact repeated actions, with tooltips for meaning.
+- Quantity inputs should keep text visually centered.
 
 ## Recipe Rules
 
@@ -39,6 +43,19 @@ This guide defines the visual rules for the Survival List Overlay. The overlay i
 - Recipe ingredient rows must be indented and visually quieter than parent rows.
 - Expanded recipe content may increase row height; normal item rows should remain consistent.
 - Ingredient rows do not get the same action weight as parent rows.
+- Recipe ingredient rows do not count against the top-level entry limit.
+
+## Interaction Mode Rules
+
+- Locked mode should hide edit-only controls where possible and prevent accidental dragging/resizing.
+- Edit mode may show close, move, resize, scale, and theme controls.
+- True click-through is a future enhancement; locked mode currently means no drag/resize.
+
+## Search And Add Rules
+
+- Search results should appear when the user is actively searching and stay visually secondary to tracked entries.
+- Normal Add updates an existing entry when the same item or recipe is already tracked.
+- Duplicate creation must be a separate explicit action.
 
 ## Screenshot Audit Expectations
 

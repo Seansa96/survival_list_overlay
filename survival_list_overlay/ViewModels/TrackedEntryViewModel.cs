@@ -10,17 +10,23 @@ public sealed class TrackedEntryViewModel : INotifyPropertyChanged
 {
     private readonly Func<string, int> collectedQuantityProvider;
     private readonly Action<string, bool> entryChanged;
+    private readonly Func<string, MaterialDemand> materialDemandProvider;
     private readonly RegistryResolver resolver;
+    private readonly TrackedListType listType;
 
     public TrackedEntryViewModel(
         TrackedEntry entry,
+        TrackedListType listType,
         RegistryResolver resolver,
         Func<string, int> collectedQuantityProvider,
+        Func<string, MaterialDemand> materialDemandProvider,
         Action<string, bool> entryChanged)
     {
         Entry = entry;
+        this.listType = listType;
         this.resolver = resolver;
         this.collectedQuantityProvider = collectedQuantityProvider;
+        this.materialDemandProvider = materialDemandProvider;
         this.entryChanged = entryChanged;
 
         Entry.PropertyChanged += OnEntryPropertyChanged;
@@ -43,6 +49,10 @@ public sealed class TrackedEntryViewModel : INotifyPropertyChanged
     public string EntryTypeLabel => Entry.EntryType == RegistryEntryType.Recipe ? "Recipe" : "Item";
 
     public bool IsRecipe => Entry.EntryType == RegistryEntryType.Recipe;
+
+    public bool IsCountingList => listType == TrackedListType.Counting;
+
+    public bool IsStandardItem => !IsRecipe && !IsCountingList;
 
     public bool IsExpanded
     {
@@ -136,19 +146,60 @@ public sealed class TrackedEntryViewModel : INotifyPropertyChanged
         }
     }
 
-    public string ProgressText => IsRecipe
-        ? $"{CurrentQuantity} / {TargetQuantity} crafts"
-        : $"{CurrentQuantity} / {TargetQuantity}";
+    public MaterialDemand Demand => IsRecipe
+        ? new MaterialDemand(0, 0, 0)
+        : materialDemandProvider(Entry.RefId);
 
-    public string RemainingText => IsRecipe
-        ? $"{RemainingQuantity} crafts remaining"
-        : $"Need: {RemainingQuantity}";
+    public string ProgressText
+    {
+        get
+        {
+            if (IsRecipe)
+            {
+                return $"{CurrentQuantity} / {TargetQuantity} crafts";
+            }
 
-    public string FavoriteText => IsFavorite ? "Fav" : "Fav";
+            return IsCountingList
+                ? $"Count: {CurrentQuantity}"
+                : $"{Demand.Collected} / {Demand.TotalRequired}";
+        }
+    }
 
-    public string StickyText => IsSticky ? "Sticky" : "Pin";
+    public string RemainingText
+    {
+        get
+        {
+            if (IsRecipe)
+            {
+                return $"{RemainingQuantity} crafts remaining";
+            }
 
-    public string ExpandText => IsExpanded ? "Hide" : "Show";
+            return IsCountingList
+                ? "Collected"
+                : $"Need: {Demand.Remaining}";
+        }
+    }
+
+    public string DemandText
+    {
+        get
+        {
+            if (!IsStandardItem)
+            {
+                return string.Empty;
+            }
+
+            return Demand.RecipeDemand > 0
+                ? $"Direct {Demand.DirectTarget} + Recipes {Demand.RecipeDemand}"
+                : $"Direct target {Demand.DirectTarget}";
+        }
+    }
+
+    public string FavoriteText => IsFavorite ? "★" : "☆";
+
+    public string StickyText => IsSticky ? "●" : "○";
+
+    public string ExpandText => IsExpanded ? "⌄" : "›";
 
     public IReadOnlyList<IngredientRequirementViewModel> IngredientRows
     {
@@ -210,6 +261,8 @@ public sealed class TrackedEntryViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(DisplayName));
         OnPropertyChanged(nameof(ProgressText));
         OnPropertyChanged(nameof(RemainingText));
+        OnPropertyChanged(nameof(Demand));
+        OnPropertyChanged(nameof(DemandText));
         OnPropertyChanged(nameof(FavoriteText));
         OnPropertyChanged(nameof(StickyText));
         OnPropertyChanged(nameof(ExpandText));
